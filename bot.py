@@ -190,6 +190,9 @@ def handle_media(message):
                 parse_mode="Markdown"
             )
 
+            
+
+
 @bot.message_handler(func=lambda message: message.text == "✅ Done")
 def finish_upload(message):
     """Finish upload and generate link"""
@@ -207,7 +210,9 @@ def finish_upload(message):
         # Save to MongoDB
         db.save_files(media_id, files, user_id)
         
-        shareable_link = f"https://t.me/{bot.get_me().username}?start={media_id}"
+        # Get bot username
+        bot_username = bot.get_me().username
+        shareable_link = f"https://t.me/{bot_username}?start={media_id}"
         
         # Generate summary
         summary = {}
@@ -219,12 +224,20 @@ def finish_upload(message):
         for file_type, count in summary.items():
             summary_text += f"📁 {file_type}: {count}\n"
         
+        # Send WITHOUT Markdown for the link to ensure it's clickable
         bot.send_message(
             user_id,
-            f"✅ *Upload Complete!*\n\n"
+            f"✅ Upload Complete!\n\n"
             f"📦 Total files: {len(files)}\n"
             f"{summary_text}\n"
-            f"🔗 *Shareable Link:*\n{shareable_link}",
+            f"🔗 Shareable Link:\n{shareable_link}",
+            reply_markup=ReplyKeyboardRemove()
+        )
+        
+        # Also send a separate message with just the link (for easy copying)
+        bot.send_message(
+            user_id,
+            f"📋 *Copy this link:*\n`{shareable_link}`",
             parse_mode="Markdown",
             reply_markup=ReplyKeyboardRemove()
         )
@@ -237,6 +250,8 @@ def finish_upload(message):
             "❌ No files uploaded.",
             reply_markup=ReplyKeyboardRemove()
         )
+
+
 
 @bot.message_handler(func=lambda message: True)
 def handle_text(message):
